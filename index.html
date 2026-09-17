@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Singularity — a 4D bridge simulator</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div id="hud">
+    <div class="panel" id="stats-panel">
+      <div class="row"><span class="label">radius r / rs</span><span id="stat-r">—</span></div>
+      <div class="row"><span class="label">infall velocity (v/c)</span><span id="stat-v">—</span></div>
+      <div class="row"><span class="label">time dilation γ⁻¹ (dτ/dt)</span><span id="stat-dilation">—</span></div>
+      <div class="row"><span class="label">proper time τ (yours)</span><span id="stat-proper">0.00 s</span></div>
+      <div class="row"><span class="label">coordinate time t (outside universe)</span><span id="stat-coord">0.00 s</span></div>
+      <div class="row phase" id="stat-phase">Phase: approaching</div>
+    </div>
+
+    <div class="panel" id="controls-panel">
+      <button id="btn-start">Begin infall</button>
+      <button id="btn-reset">Reset</button>
+      <label class="slider-row">
+        <span>time scale</span>
+        <input id="timescale" type="range" min="0.1" max="4" step="0.1" value="1" />
+      </label>
+      <p class="hint">
+        Falling in raises your speed toward c. Special relativity slows your clock (τ).
+        As r → rs your local dτ/dt → 0: your proper time nearly stops relative to the
+        outside universe's coordinate time t. Past the horizon, the simulator treats
+        the radial direction as a fourth, time-like spatial axis — a bridge into a 4D
+        manifold where the original 3D timeline's "t" no longer parameterizes anything.
+      </p>
+    </div>
+  </div>
+
+  <div id="transition" class="hidden">
+    <div id="transition-text"></div>
+  </div>
+
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
