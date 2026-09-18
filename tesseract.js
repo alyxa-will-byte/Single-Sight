@@ -59,11 +59,11 @@ export function createTesseract() {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
-  const mat = new THREE.LineBasicMaterial({ color: 0x9ad1ff, transparent: true, opacity: 0.85 });
+  const mat = new THREE.LineBasicMaterial({ color: 0xb44fff, transparent: true, opacity: 0.85 });
   const lines = new THREE.LineSegments(geo, mat);
   group.add(lines);
 
-  const glow = new THREE.PointLight(0x8fd3ff, 2, 20);
+  const glow = new THREE.PointLight(0x00ff8c, 2, 20);
   group.add(glow);
 
   let t = 0;

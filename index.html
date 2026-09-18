@@ -4,10 +4,29 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Singularity — a 4D bridge simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;500&family=Bebas+Neue&family=Share+Tech+Mono&display=swap"
+  rel="stylesheet"
+/>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="noise"></div>
+  <div class="grid-bg"></div>
   <canvas id="scene"></canvas>
+
+  <header id="site-header">
+    <div class="logo-block">
+      <div class="logo logo-glitch" data-text="SINGLE-SIGHT">SINGLE<span class="v">-</span>SIGHT</div>
+      <div class="tagline">4D BRIDGE SIMULATOR<span class="dot">.</span></div>
+    </div>
+    <div class="header-right">
+      <div class="status-line"><span class="status-dot"></span>SIMULATION ONLINE</div>
+      <div class="status-line">alyxrbytes.pro/jects/singlesight</div>
+    </div>
+  </header>
 
   <div id="hud">
     <div class="panel" id="stats-panel">

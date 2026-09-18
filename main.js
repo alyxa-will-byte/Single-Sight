@@ -39,7 +39,7 @@ scene.add(horizon);
 // photon-ring glow just outside the horizon
 const ring = new THREE.Mesh(
   new THREE.RingGeometry(RS * 1.01, RS * 1.25, 128),
-  new THREE.MeshBasicMaterial({ color: 0xfff2c8, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+  new THREE.MeshBasicMaterial({ color: 0xaaffd8, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
 );
 ring.rotation.x = Math.PI / 2;
 scene.add(ring);
@@ -75,8 +75,8 @@ const diskMat = new THREE.ShaderMaterial({
       float t = clamp((vDist - uInner) / (uOuter - uInner), 0.0, 1.0);
       float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
       float swirl = sin(angle * 6.0 - uTime * (3.0 - t * 2.5) + vDist * 2.0) * 0.5 + 0.5;
-      vec3 hot = vec3(1.0, 0.95, 0.8);
-      vec3 cool = vec3(0.9, 0.25, 0.55);
+      vec3 hot = vec3(0.0, 1.0, 0.549);   // --g #00ff8c
+      vec3 cool = vec3(0.706, 0.310, 1.0); // --v #b44fff
       vec3 color = mix(hot, cool, t) * (0.55 + 0.45 * swirl);
       float edgeFade = smoothstep(0.0, 0.08, t) * smoothstep(1.0, 0.85, t);
       gl_FragColor = vec4(color, edgeFade * 0.9);
