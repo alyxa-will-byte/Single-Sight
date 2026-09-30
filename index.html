@@ -29,8 +29,15 @@
   </header>
 
   <div id="hud">
+    <div id="top-left-stack">
     <div class="panel" id="stats-panel">
-      <div class="row"><span class="label">radius r / rs</span><span id="stat-r">—</span></div>
+      <div class="row section-label">KERR BLACK HOLE (exact)</div>
+      <div class="row"><span class="label">outer horizon r₊</span><span id="stat-rplus">—</span></div>
+      <div class="row"><span class="label">inner horizon r₋</span><span id="stat-rminus">—</span></div>
+      <div class="row"><span class="label">ergosphere (equator)</span><span id="stat-ergo">—</span></div>
+      <div class="row"><span class="label">ISCO (prograde)</span><span id="stat-isco">—</span></div>
+      <div class="row section-label">INFALL (dramatized GR)</div>
+      <div class="row"><span class="label">radius r / r₊</span><span id="stat-r">—</span></div>
       <div class="row"><span class="label">infall velocity (v/c)</span><span id="stat-v">—</span></div>
       <div class="row"><span class="label">time dilation γ⁻¹ (dτ/dt)</span><span id="stat-dilation">—</span></div>
       <div class="row"><span class="label">proper time τ (yours)</span><span id="stat-proper">0.00 s</span></div>
@@ -38,19 +45,41 @@
       <div class="row phase" id="stat-phase">Phase: approaching</div>
     </div>
 
+    <div class="panel" id="dimension-panel" hidden>
+      <div class="row section-label">DIMENSION TOWER (speculative — not physics)</div>
+      <div class="row"><span class="label">level L</span><span id="stat-level">0</span></div>
+      <div class="row"><span class="label">space dimensions S(L)</span><span id="stat-space-dim">4</span></div>
+      <div class="row"><span class="label">time dimensions T(L)</span><span id="stat-time-dim">5</span></div>
+      <div class="row"><span class="label">invariant Δ = T−S</span><span id="stat-delta">1</span></div>
+      <button id="btn-descend">Descend a dimension</button>
+    </div>
+    </div>
+
     <div class="panel" id="controls-panel">
       <button id="btn-start">Begin infall</button>
       <button id="btn-reset">Reset</button>
+      <label class="slider-row">
+        <span>mass M</span>
+        <input id="mass" type="range" min="0.3" max="1" step="0.01" value="0.5" />
+      </label>
+      <label class="slider-row">
+        <span>spin a/M</span>
+        <input id="spin" type="range" min="0" max="0.998" step="0.001" value="0" />
+      </label>
+      <label class="slider-row">
+        <span>disk particles</span>
+        <input id="particles" type="range" min="500" max="20000" step="500" value="6000" />
+      </label>
       <label class="slider-row">
         <span>time scale</span>
         <input id="timescale" type="range" min="0.1" max="4" step="0.1" value="1" />
       </label>
       <p class="hint">
         Falling in raises your speed toward c. Special relativity slows your clock (τ).
-        As r → rs your local dτ/dt → 0: your proper time nearly stops relative to the
-        outside universe's coordinate time t. Past the horizon, the simulator treats
-        the radial direction as a fourth, time-like spatial axis — a bridge into a 4D
-        manifold where the original 3D timeline's "t" no longer parameterizes anything.
+        As r → r₊ your local dτ/dt → 0: your proper time nearly stops relative to the
+        outside universe's coordinate time t. Mass and spin set the Kerr horizons,
+        ergosphere and ISCO above exactly — the infall pacing itself is a dramatized,
+        not geodesically exact, radial fall.
       </p>
       <p class="hint">
         Drag to orbit and steer your approach. Starlight bends around the horizon in

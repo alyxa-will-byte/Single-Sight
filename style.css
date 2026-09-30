@@ -211,6 +211,12 @@ body::after {
   font-size: 12.5px;
 }
 
+#top-left-stack {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  gap: 0;
+}
 #stats-panel { align-self: flex-start; }
 
 .row {
@@ -229,6 +235,26 @@ body::after {
 }
 
 .row:not(.phase) span:last-child { color: var(--g3); }
+
+.section-label {
+  color: var(--muted);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--dim);
+}
+.section-label:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+#dimension-panel {
+  align-self: flex-start;
+  margin-top: 10px;
+}
+#dimension-panel button {
+  margin-top: 8px;
+  width: 100%;
+}
 
 .phase {
   margin-top: 8px;
