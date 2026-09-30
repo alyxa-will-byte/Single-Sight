@@ -1,4 +1,7 @@
 import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { RS, createInfallState, stepInfall, dilationFactor } from "./physics.js";
 import { createTesseract } from "./tesseract.js";
 
@@ -9,6 +12,50 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 2000);
+
+// ---------- gravitational lensing post-process ----------
+// Bends the rendered frame's UVs around the black hole's screen-space position,
+// approximating how a Schwarzschild lens warps light from everything behind it.
+const lensShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uBH: { value: new THREE.Vector2(0.5, 0.5) },
+    uAspect: { value: window.innerWidth / window.innerHeight },
+    uStrength: { value: 0 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform vec2 uBH;
+    uniform float uAspect;
+    uniform float uStrength;
+    varying vec2 vUv;
+    void main() {
+      vec2 diff = vUv - uBH;
+      diff.x *= uAspect;
+      float dist = max(length(diff), 0.0001);
+      vec2 dir = diff / dist;
+      float bend = uStrength / (dist * dist * 30.0 + 0.015);
+      bend = min(bend, 0.5);
+      vec2 offset = dir * bend * dist;
+      offset.x /= uAspect;
+      vec2 warped = clamp(vUv - offset, 0.0, 1.0);
+      gl_FragColor = texture2D(tDiffuse, warped);
+    }
+  `,
+};
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const lensPass = new ShaderPass(lensShader);
+lensPass.renderToScreen = true;
+composer.addPass(lensPass);
 
 // ---------- starfield ----------
 function makeStarfield(count, radius) {
@@ -98,13 +145,37 @@ let state = createInfallState(START_R);
 let falling = false;
 let timeScale = 1;
 
-function placeCamera() {
-  const angle = performance.now() * 0.00005;
+// orbit steering: auto-drift plus drag input, so falling in feels driven, not just watched
+let theta = 0;
+let phi = 0.28;
+let dragging = false;
+let lastPointer = { x: 0, y: 0 };
+
+canvas.addEventListener("pointerdown", (e) => {
+  dragging = true;
+  lastPointer = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener("pointerup", () => (dragging = false));
+window.addEventListener("pointermove", (e) => {
+  if (!dragging) return;
+  const dx = e.clientX - lastPointer.x;
+  const dy = e.clientY - lastPointer.y;
+  lastPointer = { x: e.clientX, y: e.clientY };
+  theta -= dx * 0.004;
+  phi = Math.max(-1.3, Math.min(1.3, phi + dy * 0.003));
+});
+
+function placeCamera(dt) {
+  if (!dragging) theta += dt * 0.03; // gentle auto-drift when not steering
   const r = state.r + 2.2; // stay slightly outside probe radius for a chase view
-  camera.position.set(r * Math.cos(angle), r * 0.28, r * Math.sin(angle));
+  camera.position.set(
+    r * Math.cos(theta) * Math.cos(phi),
+    r * Math.sin(phi),
+    r * Math.sin(theta) * Math.cos(phi)
+  );
   camera.lookAt(0, 0, 0);
 }
-placeCamera();
+placeCamera(0);
 
 // ---------- HUD ----------
 const statR = document.getElementById("stat-r");
@@ -177,12 +248,18 @@ function animate() {
   ring.rotation.z += dt * 0.1;
 
   if (!state.crossed) {
-    placeCamera();
+    placeCamera(dt);
   } else {
     tesseract.update(dt);
     camera.position.lerp(new THREE.Vector3(0, 0, 6), 0.02);
     camera.lookAt(0, 0, 0);
   }
+
+  // gravitational lensing strengthens as the horizon fills more of the screen
+  const bhWorld = new THREE.Vector3(0, 0, 0).project(camera);
+  lensShader.uniforms.uBH.value.set((bhWorld.x + 1) / 2, (bhWorld.y + 1) / 2);
+  const proximity = Math.min(RS / Math.max(state.r - RS, RS * 0.05), 6);
+  lensShader.uniforms.uStrength.value = state.crossed ? 0.15 : 0.06 + proximity * 0.09;
 
   statR.textContent = (state.r / RS).toFixed(3);
   statV.textContent = Math.min(Math.sqrt(RS / Math.max(state.r, 0.001)), 0.9999).toFixed(4);
@@ -190,7 +267,7 @@ function animate() {
   statProper.textContent = `${state.tau.toFixed(2)} s`;
   statCoord.textContent = state.tCoord > 1e6 ? state.tCoord.toExponential(2) + " s" : `${state.tCoord.toFixed(2)} s`;
 
-  renderer.render(scene, camera);
+  composer.render();
 }
 animate();
 
@@ -198,4 +275,6 @@ window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+  lensShader.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
 });

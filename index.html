@@ -52,6 +52,10 @@
         the radial direction as a fourth, time-like spatial axis — a bridge into a 4D
         manifold where the original 3D timeline's "t" no longer parameterizes anything.
       </p>
+      <p class="hint">
+        Drag to orbit and steer your approach. Starlight bends around the horizon in
+        real time — that warped halo is gravitational lensing, not a texture.
+      </p>
     </div>
   </div>
 
@@ -60,7 +64,12 @@
   </div>
 
   <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
   </script>
   <script type="module" src="main.js"></script>
 </body>
