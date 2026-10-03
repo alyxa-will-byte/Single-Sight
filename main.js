@@ -16,12 +16,16 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 2000);
 
 // ---------- gravitational lensing post-process ----------
+// uChroma drives a chromatic-aberration spike (R/G/B sampled at slightly
+// diverging warped UVs) layered on top of the steady lensing bend, used
+// during horizon crossing for the "tearing apart" look.
 const lensShader = {
   uniforms: {
     tDiffuse: { value: null },
     uBH: { value: new THREE.Vector2(0.5, 0.5) },
     uAspect: { value: window.innerWidth / window.innerHeight },
     uStrength: { value: 0 },
+    uChroma: { value: 0 },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -35,18 +39,26 @@ const lensShader = {
     uniform vec2 uBH;
     uniform float uAspect;
     uniform float uStrength;
+    uniform float uChroma;
     varying vec2 vUv;
-    void main() {
-      vec2 diff = vUv - uBH;
+
+    vec2 warpAt(vec2 uv, float extraBend) {
+      vec2 diff = uv - uBH;
       diff.x *= uAspect;
       float dist = max(length(diff), 0.0001);
       vec2 dir = diff / dist;
-      float bend = uStrength / (dist * dist * 30.0 + 0.015);
-      bend = min(bend, 0.5);
+      float bend = (uStrength + extraBend) / (dist * dist * 30.0 + 0.015);
+      bend = min(bend, 0.6);
       vec2 offset = dir * bend * dist;
       offset.x /= uAspect;
-      vec2 warped = clamp(vUv - offset, 0.0, 1.0);
-      gl_FragColor = texture2D(tDiffuse, warped);
+      return clamp(uv - offset, 0.0, 1.0);
+    }
+
+    void main() {
+      float r = texture2D(tDiffuse, warpAt(vUv, uChroma * 0.03)).r;
+      float g = texture2D(tDiffuse, warpAt(vUv, 0.0)).g;
+      float b = texture2D(tDiffuse, warpAt(vUv, -uChroma * 0.03)).b;
+      gl_FragColor = vec4(r, g, b, 1.0);
     }
   `,
 };
@@ -295,6 +307,10 @@ function fullReset() {
   falling = false;
   level = 0;
   mode = "kerr";
+  transitionStarted = false;
+  crossingT0 = null;
+  lensShader.uniforms.uChroma.value = 0;
+  flashEl.classList.remove("hit", "fade");
   disposeHypercube();
   disposeBeam();
   dimensionPanel.hidden = true;
@@ -303,6 +319,7 @@ function fullReset() {
   diskPoints.visible = true;
   stars.visible = true;
   transitionEl.classList.remove("visible");
+  transitionText.innerHTML = "";
   statPhase.textContent = "Phase: approaching";
 }
 
@@ -419,27 +436,84 @@ function updateDimensionHud() {
   statDelta.textContent = T - S;
 }
 
+// Horizon-crossing sequence, beat-matched to Gargantua's entry in
+// Interstellar: escalating warp/shake as the horizon fills the frame,
+// a flash-cut to white then black, a silent beat, then the reveal.
 let transitionStarted = false;
+let crossingT0 = null; // non-null while the pre-cut warp/shake ramp is live
+const flashEl = document.getElementById("flash");
+
+function showCommLine(text, delayMs) {
+  setTimeout(() => {
+    const el = document.createElement("span");
+    el.className = "line";
+    el.textContent = text;
+    transitionText.appendChild(el);
+  }, delayMs);
+}
+
 function beginHorizonCrossing() {
   transitionStarted = true;
+  crossingT0 = performance.now();
   statPhase.textContent = "Phase: crossing the horizon";
-  transitionText.textContent =
-    "Your proper time never stopped. It is the outside universe's clock that has run away to infinity — " +
-    "its timeline no longer has anything left to synchronize with. What follows — a tower of rising space " +
-    "and time dimensions — is speculative worldbuilding layered on top of that real fact, not a further " +
-    "physical derivation.";
+  transitionText.innerHTML = "";
   transitionEl.classList.add("visible");
+  showCommLine("HORIZON BREACH IMMINENT.", 0);
+  showCommLine("TIDAL SHEAR RISING.", 450);
+  showCommLine("HOLD TOGETHER.", 900);
+  showCommLine("THIS IS IT.", 1350);
+
+  // flash-cut to white, then black
   setTimeout(() => {
+    crossingT0 = null;
+    lensShader.uniforms.uChroma.value = 0;
+    flashEl.classList.remove("fade");
+    flashEl.classList.add("hit");
     horizonMesh.visible = false;
     ergoMesh.visible = false;
     diskPoints.visible = false;
     stars.visible = false;
+    transitionText.innerHTML = "";
+  }, 1750);
+
+  // white fades to black (transition backdrop is already #000)
+  setTimeout(() => {
+    flashEl.classList.remove("hit");
+    flashEl.classList.add("fade");
+  }, 1850);
+
+  // silent beat on black, nothing on screen
+  setTimeout(() => {
+    const line = document.createElement("span");
+    line.className = "line";
+    line.style.textTransform = "none";
+    line.style.fontSize = "16px";
+    line.style.color = "var(--v3)";
+    line.style.letterSpacing = "0.02em";
+    line.textContent =
+      "Your proper time never stopped. It is the outside universe's clock that has run away to infinity — " +
+      "its timeline no longer has anything left to synchronize with.";
+    transitionText.appendChild(line);
+    const line2 = document.createElement("span");
+    line2.className = "line";
+    line2.style.textTransform = "none";
+    line2.style.fontSize = "14px";
+    line2.style.color = "var(--muted)";
+    line2.style.animationDelay = "0.4s";
+    line2.textContent =
+      "What follows — a tower of rising space and time dimensions — is speculative worldbuilding layered " +
+      "on top of that real fact, not a further physical derivation.";
+    transitionText.appendChild(line2);
+  }, 3100);
+
+  // proceed into the dimension reveal
+  setTimeout(() => {
     transitionEl.classList.remove("visible");
     dimensionPanel.hidden = false;
     level = 1;
     updateDimensionHud();
     startBeam();
-  }, 3200);
+  }, 5600);
 }
 
 // ---------- init ----------
@@ -465,10 +539,21 @@ function animate() {
     const dilation = dilationFactor(state.r, rPlus);
     placeCamera(dt);
 
+    if (crossingT0 !== null) {
+      const t = (performance.now() - crossingT0) / 1000;
+      const ramp = Math.min(t / 1.4, 1);
+      const shakeMag = ramp * ramp * 0.12;
+      camera.position.x += (Math.random() - 0.5) * shakeMag;
+      camera.position.y += (Math.random() - 0.5) * shakeMag;
+      camera.position.z += (Math.random() - 0.5) * shakeMag;
+      lensShader.uniforms.uChroma.value = ramp;
+    }
+
     const bhWorld = new THREE.Vector3(0, 0, 0).project(camera);
     lensShader.uniforms.uBH.value.set((bhWorld.x + 1) / 2, (bhWorld.y + 1) / 2);
     const proximity = Math.min(rPlus / Math.max(state.r - rPlus, rPlus * 0.05), 6);
-    lensShader.uniforms.uStrength.value = 0.06 + proximity * 0.09;
+    const crossingBoost = crossingT0 !== null ? (Math.min((performance.now() - crossingT0) / 1400, 1) * 0.6) : 0;
+    lensShader.uniforms.uStrength.value = 0.06 + proximity * 0.09 + crossingBoost;
 
     statR.textContent = (state.r / rPlus).toFixed(3);
     statV.textContent = Math.min(Math.sqrt(rPlus / Math.max(state.r, 0.001)), 0.9999).toFixed(4);

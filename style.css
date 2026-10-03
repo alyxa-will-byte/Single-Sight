@@ -316,6 +316,38 @@ button:active { transform: translateY(1px); }
   line-height: 1.55;
 }
 
+#flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9500;
+}
+#flash.hit {
+  transition: opacity 0.08s ease-out;
+  opacity: 1;
+}
+#flash.fade {
+  transition: opacity 1.1s ease-in;
+  opacity: 0;
+}
+
+#transition-text .line {
+  display: block;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: line-in 0.5s ease forwards;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--g3);
+  margin-bottom: 10px;
+}
+@keyframes line-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
 #transition {
   position: fixed;
   inset: 0;
